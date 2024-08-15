@@ -1,12 +1,16 @@
 import './style.css'
+import { io } from 'socket.io-client'
+
+import { setupCounter } from 'counter'
+
+import viteLog from '../public/vite.svg'
+
 import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
     <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
+      <img src="${viteLog}" class="logo" alt="Vite logo" />
     </a>
     <a href="https://www.typescriptlang.org/" target="_blank">
       <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
@@ -22,3 +26,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 `
 
 setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+
+const socket = io('http://localhost:3000', {
+  transports: ['websocket'],
+})
+socket.on('connect', () => console.log('connected'))

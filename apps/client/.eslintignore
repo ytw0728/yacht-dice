@@ -1,0 +1,12 @@
+node_modules
+dist
+target
+.git
+public
+
+node_modules
+*.js
+*.cjs
+*.mjs
+
+*.d.ts

@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"eslint.workingDirectories": [{ "pattern": "./apps/*" }, { "pattern": "./packages/*" }],
+
+		"[javascript][typescript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.formatOnSave": true,
+			"editor.codeActionsOnSave": {
+				"source.fixAll.eslint": "explicit"
+			}
+		},
+	},
+	"extensions": {
+		"recommendations": [
+			"dbaeumer.vscode-eslint",
+			"esbenp.prettier-vscode",
+			"oxc.oxc-vscode"
+		]
+	}
+}
