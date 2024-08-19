@@ -1,21 +1,14 @@
-export type RecordKeys = 'one' | 'two' | 'three' | 'four' | 'five' | 'six' | 'Choice' | '4 of a Kind' | 'Full House' | 'S. Straight' | 'L. Straight' | 'Yacht'
+import { BoardState } from 'components/board'
+import { UserState } from 'components/user'
 
 export const PLAYER_COUNT = { min: 2, max: 6 } as const
 export const MAX_ROUND = 12
 
-type UserID = string
+type UserID = UserState['info']['id']
 
 interface Props {
   currentRound: number
-  boards: {
-    userID: UserID
-    records: {
-      [key in RecordKeys]: {
-        round: number
-        score: number
-      }
-    }
-  }[]
+  boards: (BoardState & { userID: UserID })[]
 }
 
 interface Returns {
@@ -59,11 +52,13 @@ export function validate(props: Props): Returns {
     return true
   })
 
-  const userRank = props.boards.map((board) => ({
-    userID: board.userID,
-    score: Object.values(board.records).reduce((prev, { score }) => prev + score, 0),
-  })).sort(({ score: a }, { score: b }) => b - a)
- 
+  const userRank = props.boards
+    .map((board) => ({
+      userID: board.userID,
+      score: Object.values(board.records).reduce((prev, { score }) => prev + score, 0),
+    }))
+    .sort(({ score: a }, { score: b }) => b - a)
+
   return {
     gameEnd,
     userRank,
