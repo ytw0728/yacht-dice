@@ -1,88 +1,71 @@
-type RecordKeys = 'one' | 'two' | 'three' //| 'four' | 'five' | 'six' | 'Choice' | '4 of a Kind' | 'Full House' | 'S. Straight' | 'L. Straight' | 'Yacht'
+export type RecordKeys = 'one' | 'two' | 'three' | 'four' | 'five' | 'six' | 'Choice' | '4 of a Kind' | 'Full House' | 'S. Straight' | 'L. Straight' | 'Yacht'
+
+export const PLAYER_COUNT = { min: 2, max: 6 } as const
+export const MAX_ROUND = 12
+
+type UserID = string
 
 interface Props {
-  currentTurn: {
-    userID: string
-  }
-  currentRound: number // 12 round 
+  currentRound: number
   boards: {
-    userID: string
+    userID: UserID
     records: {
       [key in RecordKeys]: {
         round: number
         score: number
       }
     }
-    sum: number
   }[]
 }
 
 interface Returns {
-  result: boolean
+  gameEnd: boolean
+  userRank: {
+    userID: UserID
+    score: number
+  }[]
 }
+
 /**
  * props는 현재 게임의 요트 다이스 보드 정보가 전달되면,
  * return으로 승패 및 순위 등을 포함해서, 게임의 결과를 반환한다.
  */
 export function validate(props: Props): Returns {
-
-  for (let p of props.boards) {
-    console.log(p)
-  };
-  return {
-    result: true,
+  if (props.currentRound > MAX_ROUND || props.currentRound < 0) {
+    throw new Error('게임 라운드가 초과되었습니다.')
   }
-}
+  if (props.boards.length < PLAYER_COUNT.min || props.boards.length > PLAYER_COUNT.max) {
+    throw new Error('플레이어 수가 부족하거나 초과되었습니다.')
+  }
 
-export function test_validate() {
-  const btn = document.createElement('button')
-  btn.id = 'test_trigger'
-  document.querySelector('#app')?.appendChild(btn)
+  const gameEnd = props.boards.every((board) => {
+    const keys = Object.keys(board.records)
 
-  btn.addEventListener('click', () => {
-    console.log(
-      validate({
-        currentRound: 3,
-        currentTurn: {
-          userID: '1',
-        },
-        boards: [{
-          userID: '1',
-          sum: 7,
-          records: {
-            'one': {
-              round: 1,
-              score: 2
-            },
-            'two': {
-              round: 2,
-              score: 2
-            },
-            'three':{
-              round: 3,
-              score: 3
-            }
-          }
-        }, 
-        {
-          userID: '2',
-          sum: 7,
-          records: {
-            'one': {
-              round: 1,
-              score: 2
-            },
-            'two': {
-              round: 2,
-              score: 2
-            },
-            'three':{
-              round: 3,
-              score: 3
-            }
-          }
-        }],
-      }),
-    )
+    if (keys.length !== MAX_ROUND) {
+      return false
+    }
+
+    const set = new Set<number>()
+    for (const v of Object.values(board.records)) {
+      set.add(v.round)
+    }
+
+    for (let i = 1; i <= MAX_ROUND; i++) {
+      if (!set.has(i)) {
+        return false
+      }
+    }
+
+    return true
   })
+
+  const userRank = props.boards.map((board) => ({
+    userID: board.userID,
+    score: Object.values(board.records).reduce((prev, { score }) => prev + score, 0),
+  })).sort(({ score: a }, { score: b }) => b - a)
+ 
+  return {
+    gameEnd,
+    userRank,
+  }
 }
