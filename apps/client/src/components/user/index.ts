@@ -6,6 +6,8 @@
 //         1. 아이디, 닉네임 등
 //     - [ ]  요트 다이스 보드 기입 정보 및 점수 등
 
+import { atom } from 'nanostores'
+
 export enum ConnectionStatus {
   CONNECTED = 0,
   CONNECTING = 1,
@@ -28,3 +30,18 @@ export interface UserState {
     nickname: string
   }
 }
+
+const initial: UserState[] = []
+const state = atom<UserState[]>(initial)
+
+export const $Users = Object.assign(state, {
+  add: (user: UserState): void => {
+    state.set([...state.get(), user])
+  },
+  remove: (id: string): void => {
+    state.set(state.get().filter((user) => user.info.id !== id))
+  },
+  update: (id: string, user: Partial<UserState>): void => {
+    state.set(state.get().map((prev) => (prev.info.id === id ? { ...prev, ...user } : prev)))
+  },
+})
