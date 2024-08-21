@@ -10,6 +10,8 @@ import { atom } from 'nanostores'
 
 import { PLAYER_COUNT } from 'utils/validater'
 
+import { determiners, nouns } from './meta'
+
 export enum ConnectionStatus {
   CONNECTED = 0,
   CONNECTING = 1,
@@ -37,7 +39,7 @@ const initial: UserState[] = []
 const state = atom<UserState[]>(initial)
 
 export const $Users = Object.assign(state, {
-  add: (nickname: string): void => {
+  add: (): void => {
     if (PLAYER_COUNT.max === state.get().length) {
       return
     }
@@ -51,7 +53,7 @@ export const $Users = Object.assign(state, {
         },
         info: {
           id: window.crypto.randomUUID(),
-          nickname,
+          nickname: randomNickname(),
         },
       },
     ])
@@ -63,3 +65,12 @@ export const $Users = Object.assign(state, {
     state.set(state.get().map((prev) => (prev.info.id === id ? { ...prev, info: { ...prev.info, nickname } } : prev)))
   },
 })
+
+function randomNickname(): string {
+  const random = Math.random()
+
+  const determiner = determiners.at((random * 10000) % determiners.length) ?? ''
+  const noun = nouns.at((random * 10000) % nouns.length) ?? ''
+
+  return `${determiner} ${noun}`
+}

@@ -17,12 +17,15 @@ export type RecordKeys =
   | 'Yacht'
 
 export interface BoardState {
-  records: {
-    [key in RecordKeys]: {
-      round: number
-      score: number
-    }
-  }
+  records: Partial<
+    Record<
+      RecordKeys,
+      {
+        round: number
+        score: number
+      }
+    >
+  >
 }
 
 export function Board(): PreinitializedWritableAtom<BoardState> {
