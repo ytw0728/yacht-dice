@@ -8,6 +8,8 @@
 
 import { atom } from 'nanostores'
 
+import { PLAYER_COUNT } from 'utils/validater'
+
 export enum ConnectionStatus {
   CONNECTED = 0,
   CONNECTING = 1,
@@ -35,13 +37,29 @@ const initial: UserState[] = []
 const state = atom<UserState[]>(initial)
 
 export const $Users = Object.assign(state, {
-  add: (user: UserState): void => {
-    state.set([...state.get(), user])
+  add: (nickname: string): void => {
+    if (PLAYER_COUNT.max === state.get().length) {
+      return
+    }
+
+    state.set([
+      ...state.get(),
+      {
+        status: {
+          connection: ConnectionStatus.CONNECTED,
+          play: PlayStatus.READY,
+        },
+        info: {
+          id: window.crypto.randomUUID(),
+          nickname,
+        },
+      },
+    ])
   },
   remove: (id: string): void => {
     state.set(state.get().filter((user) => user.info.id !== id))
   },
-  update: (id: string, user: Partial<UserState>): void => {
-    state.set(state.get().map((prev) => (prev.info.id === id ? { ...prev, ...user } : prev)))
+  update: (id: string, nickname: string): void => {
+    state.set(state.get().map((prev) => (prev.info.id === id ? { ...prev, info: { ...prev.info, nickname } } : prev)))
   },
 })

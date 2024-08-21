@@ -48,4 +48,15 @@ export function Board(): PreinitializedWritableAtom<BoardState> {
   })
 }
 
-export const $Boards = map<Record<UserState['info']['id'], ReturnType<typeof Board>>>()
+const state = map<Record<UserState['info']['id'], ReturnType<typeof Board>>>()
+
+export const $Boards = Object.assign(state, {
+  register: (id: UserState['info']['id']): void => {
+    const prev = state.get()
+    if (Object.keys(prev).includes(id)) {
+      return
+    }
+
+    state.setKey(id, Board())
+  },
+})

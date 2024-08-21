@@ -8,34 +8,47 @@ export interface DiceState {
 
 export const DICE_COINT = 5
 
-const initial: DiceState[] = Array(DICE_COINT)
-  .fill(undefined)
-  .map(() => ({
-    id: window.crypto.randomUUID(),
-    fixed: false,
-    value: 1,
-  }))
+function initial(): { dices: DiceState[]; step: number } {
+  return {
+    dices: Array(DICE_COINT)
+      .fill(undefined)
+      .map(() => ({
+        id: window.crypto.randomUUID(),
+        fixed: false,
+        value: 1,
+      })),
+    step: 0,
+  }
+}
 
-const state = atom<DiceState[]>(initial)
+const state = atom<{ dices: DiceState[]; step: number }>(initial())
 
 export const $Dice = Object.assign(state, {
   reset: () => {
-    state.set({ ...initial })
+    state.set(initial())
   },
   roll: () => {
-    state.set(
-      state.get().map((dice) => ({
+    const prev = state.get()
+    if (prev.step > 3) {
+      return
+    }
+
+    state.set({
+      dices: prev.dices.map((dice) => ({
         ...dice,
         value: dice.fixed ? dice.value : Math.floor((Math.random() * 10) % 6) + 1,
       })),
-    )
+      step: prev.step + 1,
+    })
   },
-  fix: (id: string) => {
-    state.set(
-      state.get().map((dice) => ({
+  toggle: (id: string) => {
+    const prev = state.get()
+    state.set({
+      dices: prev.dices.map((dice) => ({
         ...dice,
         fixed: dice.id === id ? !dice.fixed : dice.fixed,
       })),
-    )
+      step: prev.step,
+    })
   },
 })
