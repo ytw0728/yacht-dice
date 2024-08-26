@@ -7,6 +7,7 @@ export interface DiceState {
 }
 
 export const DICE_COINT = 5
+export const MAX_DICE_STEP = 3
 
 function initial(): { dices: DiceState[]; step: number } {
   return {
@@ -29,7 +30,7 @@ export const $Dice = Object.assign(state, {
   },
   roll: () => {
     const prev = state.get()
-    if (prev.step > 3) {
+    if (prev.step >= MAX_DICE_STEP) {
       return
     }
 
@@ -43,6 +44,9 @@ export const $Dice = Object.assign(state, {
   },
   toggle: (id: string) => {
     const prev = state.get()
+    if (prev.step === 0) {
+      return
+    }
     state.set({
       dices: prev.dices.map((dice) => ({
         ...dice,

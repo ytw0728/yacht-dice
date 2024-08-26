@@ -26,8 +26,17 @@ const initial: GameStatus = {
 const state = atom<GameStatus>(initial)
 
 export const $Game = Object.assign(state, {
-  ready: (): boolean => {
-    return state.get().stage === GameStage.READY
+  ready: () => {
+    const prev = state.get()
+    state.set({ ...prev, stage: GameStage.READY })
+  },
+  startGame: (userID: UserState['info']['id']) => {
+    const prev = state.get()
+    if (prev.stage !== GameStage.READY) {
+      throw new Error('The game is not ready')
+    }
+
+    state.set({ ...prev, stage: GameStage.PLAYING, turn: userID, round: 0 })
   },
   setTurn: (userID: UserState['info']['id'] | null): void => {
     const prev = state.get()
@@ -41,14 +50,14 @@ export const $Game = Object.assign(state, {
 
     state.set({ ...prev, turn: userID })
   },
-  setRound: (): void => {
+  nextRound: (userID: UserState['info']['id']): void => {
     const prev = state.get()
     const { stage } = prev
     if (stage !== GameStage.PLAYING) {
       throw new Error('The game is not started')
     }
 
-    state.set({ ...prev, round: prev.round + 1 })
+    state.set({ ...prev, round: prev.round + 1, turn: userID })
   },
   setWinner: (userID: UserState['info']['id'] | null): void => {
     const prev = state.get()
