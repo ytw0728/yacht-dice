@@ -1,7 +1,10 @@
-import { $Boards, RecordKeyArray } from 'components/board'
-import { $Dice } from 'components/dice'
+import { $Boards, BonusRecordKey, BonusScore, RecordKeyArray, RecordKeys } from 'components/board'
+import { $Dice, MAX_DICE_STEP } from 'components/dice'
 import { $Game, GameStage } from 'components/game'
+import { $TemporaryScore } from 'components/temporary-score'
 import { $Users } from 'components/user'
+import { isAchieveBonus, getScoreOf } from 'utils/caculator'
+import { MAX_ROUND, validate } from 'utils/validater'
 function main() {
   const root = document.querySelector('div#app')!
 
@@ -54,19 +57,48 @@ function main() {
       return
     }
 
-    $Boards.setRecord(current.turn, 'Yacht', {
+    const temporary = $TemporaryScore.get()
+    if (temporary.checkedKey === null || temporary.scores === null) {
+      return
+    }
+
+    const currentBoard = $Boards.getAll(current.turn)
+    $Boards.setRecord(current.turn, temporary.checkedKey, {
       round: current.round,
-      score: dice.dices.reduce((prev, curr) => prev + curr.value, 0),
+      score: temporary.scores[temporary.checkedKey],
     })
+
+    if (
+      currentBoard &&
+      isAchieveBonus({
+        ...currentBoard,
+        records: {
+          ...currentBoard.records,
+          [temporary.checkedKey]: {
+            round: current.round,
+            score: temporary.scores[temporary.checkedKey],
+          },
+        },
+      })
+    ) {
+      $Boards.setRecord(current.turn, BonusRecordKey, {
+        round: current.round,
+        score: BonusScore,
+      })
+    }
 
     const users = $Users.get()
     const currentUserIndex = users.findIndex((user) => user.info.id === current.turn)
 
     if (currentUserIndex + 1 === users.length) {
       $Game.nextRound(users[0].info.id)
-    } else {
-      $Game.setTurn(users[(currentUserIndex + 1) % users.length].info.id)
+      $TemporaryScore.reset()
+      $Dice.reset()
+      return
     }
+
+    $Game.setTurn(users[(currentUserIndex + 1) % users.length].info.id)
+    $TemporaryScore.reset()
     $Dice.reset()
   })
 
@@ -86,6 +118,16 @@ function main() {
     actionPanel.innerHTML = ''
 
     if (game.stage === GameStage.PLAYING) {
+      if (game.round >= MAX_ROUND) {
+        $Game.set({
+          ...game,
+          stage: GameStage.FINISH,
+          winner: validate({
+            boards: $Boards.get(),
+            currentRound: game.round - 1,
+          }).userRank[0].userID,
+        })
+      }
       actionPanel.appendChild(rollDiceButton)
       actionPanel.appendChild(turnEndButton)
 
@@ -109,6 +151,25 @@ function main() {
         }
       }
     }
+
+    if (game.stage === GameStage.FINISH) {
+      const endButton = document.createElement('button')
+      endButton.addEventListener('click', () => {
+        $Game.regame()
+        $Boards.erase()
+        $Dice.reset()
+      })
+      const user = $Users.get().find((user) => user.info.id === game.winner)
+      const nickname = user?.info.nickname ?? ''
+      const score = Object.values($Boards.getAll(user?.info.id ?? '')?.records ?? {}).reduce(
+        (prev, curr) => prev + curr.score,
+        0,
+      )
+
+      endButton.textContent = `The Winner is... ${nickname} (${score} 점)!!! Click To Reset Game`
+
+      actionPanel.appendChild(endButton)
+    }
   })
 
   $Dice.subscribe(({ dices, step }) => {
@@ -118,6 +179,18 @@ function main() {
       return
     }
 
+    if (0 < step && step <= MAX_DICE_STEP) {
+      $TemporaryScore.set({
+        ...$TemporaryScore.get(),
+        scores: RecordKeyArray.reduce(
+          (prev, key) => {
+            prev[key] = getScoreOf(key, dices)
+            return prev
+          },
+          {} as Record<RecordKeys, number>,
+        ),
+      })
+    }
     const diceElements = dices.map((dice) => {
       const elem = document.createElement('div')
       elem.textContent = String(dice.value)
@@ -139,6 +212,34 @@ function main() {
     stepElem.style.height = '100px'
 
     dicePanel.replaceChildren(...diceElements, stepElem)
+  })
+
+  $TemporaryScore.subscribe((temp) => {
+    const id = $Game.get().turn
+
+    if (temp.scores === null) {
+      return
+    }
+    for (const e of document.getElementsByClassName(`${id} value`)) {
+      const key = e.getAttribute('data-key')
+      const already = e.getAttribute('data-already')
+
+      if (already === 'true' || !key) {
+        continue
+      }
+
+      const element = document.createElement('span')
+      element.style.color = temp.checkedKey === key ? 'red' : 'blue'
+      element.textContent = String(temp.scores[key as RecordKeys])
+      e.addEventListener('click', () => {
+        $TemporaryScore.set({
+          ...$TemporaryScore.get(),
+          checkedKey: key as RecordKeys,
+        })
+      })
+
+      e.replaceChildren(element)
+    }
   })
 
   $Users.subscribe((newUsers) => {
@@ -193,12 +294,47 @@ function main() {
 
             recordValue.textContent = value ? `s: ${value.score}, r: ${value.round}` : ''
             recordValue.style.flex = '1 0 0'
+            recordValue.className = `${id} value`
+            recordValue.setAttribute('data-key', key)
+            if (value) {
+              recordValue.setAttribute('data-already', 'true')
+            }
 
             record.appendChild(recordKey)
             record.appendChild(recordValue)
 
             wrapper.appendChild(record)
           }
+
+          {
+            const bonusRow = document.createElement('div')
+            bonusRow.style.display = 'flex'
+            bonusRow.style.flexDirection = 'row'
+            bonusRow.style.border = '1px solid black'
+
+            const recordKey = document.createElement('span')
+            recordKey.textContent = '> 63 Bonus'
+            recordKey.style.width = '140px'
+
+            const value = board.records[BonusRecordKey]
+
+            const recordValue = document.createElement('span')
+
+            recordValue.textContent = value ? `s: ${value.score}, r: ${value.round}` : ''
+            recordValue.style.flex = '1 0 0'
+
+            bonusRow.appendChild(recordKey)
+            bonusRow.appendChild(recordValue)
+
+            wrapper.appendChild(bonusRow)
+          }
+
+          const totalRow = document.createElement('div')
+          totalRow.style.display = 'flex'
+          totalRow.style.flexDirection = 'row'
+          totalRow.style.border = '1px solid black'
+          totalRow.textContent = `Total: ${Object.values(board.records).reduce((prev, curr) => prev + curr.score, 0)}`
+          wrapper.appendChild(totalRow)
 
           return wrapper
         })

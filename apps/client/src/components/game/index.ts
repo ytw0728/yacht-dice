@@ -71,4 +71,7 @@ export const $Game = Object.assign(state, {
   reset: (): void => {
     state.set({ ...initial })
   },
+  regame: (): void => {
+    state.set({ ...initial, stage: GameStage.READY })
+  },
 })

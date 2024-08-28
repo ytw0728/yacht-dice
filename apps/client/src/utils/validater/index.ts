@@ -8,7 +8,7 @@ type UserID = UserState['info']['id']
 
 interface Props {
   currentRound: number
-  boards: (BoardState & { userID: UserID })[]
+  boards: Record<UserID, BoardState>
 }
 
 interface Returns {
@@ -24,14 +24,16 @@ interface Returns {
  * return으로 승패 및 순위 등을 포함해서, 게임의 결과를 반환한다.
  */
 export function validate(props: Props): Returns {
-  if (props.currentRound > MAX_ROUND || props.currentRound < 0) {
+  if (props.currentRound >= MAX_ROUND || props.currentRound < 0) {
     throw new Error('게임 라운드가 초과되었습니다.')
   }
-  if (props.boards.length < PLAYER_COUNT.min || props.boards.length > PLAYER_COUNT.max) {
+  const asList = Object.entries(props.boards)
+  const numberOfUsers = asList.length
+  if (numberOfUsers < PLAYER_COUNT.min || numberOfUsers > PLAYER_COUNT.max) {
     throw new Error('플레이어 수가 부족하거나 초과되었습니다.')
   }
 
-  const gameEnd = props.boards.every((board) => {
+  const gameEnd = asList.every(([_, board]) => {
     const keys = Object.keys(board.records)
 
     if (keys.length !== MAX_ROUND) {
@@ -52,9 +54,9 @@ export function validate(props: Props): Returns {
     return true
   })
 
-  const userRank = props.boards
-    .map((board) => ({
-      userID: board.userID,
+  const userRank = asList
+    .map(([id, board]) => ({
+      userID: id,
       score: Object.values(board.records).reduce((prev, { score }) => prev + score, 0),
     }))
     .sort(({ score: a }, { score: b }) => b - a)
