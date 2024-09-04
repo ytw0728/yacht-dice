@@ -2,37 +2,18 @@ import { map } from 'nanostores'
 
 import { UserState } from 'components/user'
 
-export type RecordKeys =
-  | 'One'
-  | 'Two'
-  | 'Three'
-  | 'Four'
-  | 'Five'
-  | 'Six'
-  | 'Choice'
-  | '4 of a Kind'
-  | 'Full House'
-  | 'S. Straight'
-  | 'L. Straight'
-  | 'Yacht'
+export type SimpleRecordKeys = 'Aces' | 'Deuces' | 'Threes' | 'Fours' | 'Fives' | 'Sixes'
+export type CombinationRecordKeys = 'Choice' | '4 of a Kind' | 'Full House' | 'S. Straight' | 'L. Straight' | 'Yacht'
+export type RecordKeys = SimpleRecordKeys | CombinationRecordKeys
 
-export const BonusRecordKey = '> 63'
+export const BonusRecordKey = 'Bonus'
+export const BonusThreshold = 63
 export const BonusScore = 35
 
-export const RecordKeyArray: RecordKeys[] = [
-  'One',
-  'Two',
-  'Three',
-  'Four',
-  'Five',
-  'Six',
-  'Choice',
-  '4 of a Kind',
-  'Full House',
-  'S. Straight',
-  'L. Straight',
-  'Yacht',
-]
+export const RecordKeyArray: { simple: SimpleRecordKeys[]; combination: CombinationRecordKeys[] } = {
+  simple: ['Aces', 'Deuces', 'Threes', 'Fours', 'Fives', 'Sixes'],
+  combination: ['Choice', '4 of a Kind', 'Full House', 'S. Straight', 'L. Straight', 'Yacht'],
+}
 
 export interface BoardState {
   records: Partial<

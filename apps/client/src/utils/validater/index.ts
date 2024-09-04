@@ -1,7 +1,7 @@
 import { BoardState } from 'components/board'
 import { UserState } from 'components/user'
 
-export const PLAYER_COUNT = { min: 2, max: 6 } as const
+export const PLAYER_COUNT = { min: 1, max: 6 } as const
 export const MAX_ROUND = 12
 
 type UserID = UserState['info']['id']

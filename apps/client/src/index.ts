@@ -1,40 +1,43 @@
 import { FancyButton, List } from '@pixi/ui'
-import { Application } from 'pixi.js'
+import { allTasks } from 'nanostores'
+import { AnimatedSprite, Application, Assets, Graphics, Sprite, Spritesheet } from 'pixi.js'
 
-import { $Boards, BonusRecordKey, BonusScore, RecordKeyArray, RecordKeys } from 'components/board'
+import { $Boards, BonusRecordKey, BonusScore, BonusThreshold, RecordKeyArray } from 'components/board'
 import { $Dice, MAX_DICE_STEP } from 'components/dice'
 import { $Game, GameStage } from 'components/game'
 import { $TemporaryScore } from 'components/temporary-score'
 import { $Users } from 'components/user'
+import { FancyText } from 'ui/FancyText'
+import { GraphicButton } from 'ui/GraphicButton'
 import { ScoreBoard } from 'ui/ScoreBoard'
-import { FancyText } from 'ui/Text'
-import { isAchieveBonus, getScoreOf } from 'utils/caculator'
-import { MAX_ROUND, validate } from 'utils/validater'
+import { MAX_ROUND, PLAYER_COUNT, validate } from 'utils/validater'
 
 const app = new Application()
 
 await app.init({ resolution: Math.max(window.devicePixelRatio, 2), backgroundColor: 0xffffff, resizeTo: window })
 document.getElementById('app')?.appendChild(app.canvas)
 
-// const sheet = new Spritesheet(await Assets.load('public/d6Red.png'), (await Assets.load('public/d6Red.json')).data)
-// await sheet.parse()
+const sheet = new Spritesheet(await Assets.load('public/d6Red.png'), (await Assets.load('public/d6Red.json')).data)
+await sheet.parse()
 
-// const rollAnimations = [
-//   new AnimatedSprite(sheet.animations.roll01),
-//   new AnimatedSprite(sheet.animations.roll02),
-//   new AnimatedSprite(sheet.animations.roll03),
-//   new AnimatedSprite(sheet.animations.roll04),
-//   new AnimatedSprite(sheet.animations.roll05),
-// ]
+const animations = {
+  dice: [
+    new AnimatedSprite(sheet.animations.roll01),
+    new AnimatedSprite(sheet.animations.roll02),
+    new AnimatedSprite(sheet.animations.roll03),
+    new AnimatedSprite(sheet.animations.roll04),
+    new AnimatedSprite(sheet.animations.roll05),
+  ],
+}
 
-// for (let i = 0; i < rollAnimations.length; i++) {
-//   const roll = rollAnimations[i]
-
-//   roll.animationSpeed = 0.1666 * 3
-//   roll.x = 100 + i * 100
-//   roll.play()
-//   app.stage.addChild(roll)
-// }
+const diceList = new List<AnimatedSprite | FancyButton>({
+  children: [],
+  type: 'horizontal',
+  elementsMargin: 16,
+  padding: 10,
+})
+diceList.position.set(0, 335)
+app.stage.addChild(diceList)
 
 const userList = new List<ScoreBoard>({
   children: [],
@@ -45,19 +48,29 @@ const userList = new List<ScoreBoard>({
 userList.position.set(0, 10)
 app.stage.addChild(userList)
 
-const userAddButton = new FancyButton({
-  text: new FancyText({ text: '플레이어 추가', style: { fontSize: 12, fontWeight: 'bold' } }),
-})
-userAddButton.onPress.connect(() => $Users.add())
-userAddButton.position.set(app.screen.width / 2, app.screen.height - 100)
+const actionList = new List<GraphicButton>({
+  children: [],
+  type: 'horizontal',
 
-app.stage.addChild(userAddButton)
+  elementsMargin: 16,
+  padding: 10,
+})
+actionList.position.set(0, 420)
+app.stage.addChild(actionList)
+
+const userAddButton = new GraphicButton(
+  new FancyText({
+    text: '플레이어 추가',
+    style: { fontSize: 12, fontWeight: 'bold' },
+  }),
+)
+userAddButton.onPress.connect(() => $Users.add())
 
 $Users.subscribe((users) => {
   if (users.length === 0) {
     $Game.reset()
   }
-  if (users.length > 0) {
+  if (users.length >= PLAYER_COUNT.min && users.length <= PLAYER_COUNT.max) {
     $Game.ready()
   }
   users.map((user) => $Boards.register(user.info.id))
@@ -66,7 +79,7 @@ $Users.subscribe((users) => {
 $Boards.subscribe((boards) => {
   const users = $Users.get()
 
-  const registeredUserID = userList.children.map((child) => child.user.info.id)
+  const registeredUserID = userList.children.map((child) => child.id)
 
   for (const [id, board] of Object.entries(boards)) {
     const target = users.find((user) => user.info.id === id)
@@ -76,202 +89,32 @@ $Boards.subscribe((boards) => {
     if (!registeredUserID.includes(id)) {
       const scoreBoard = new ScoreBoard(target, board)
       userList.addChild(scoreBoard)
+      return
     }
+
+    userList.children.find((value) => value.id === id)?.setBoard(board)
   }
 })
-// const startButton = new Button()
-// startButton.onPress.connect(() => {
-//   const prev = $Game.get()
-//   if (prev.stage !== GameStage.READY) {
-//     return
-//   }
-//   const users = $Users.get()
-//   $Game.startGame(users[0].info.id)
-// })
 
-// const rollDiceButton = new Button()
-// rollDiceButton.onPress.connect(() => {
-//   $Dice.roll()
-// })
-
-// const turnEndButton = new Button()
-// turnEndButton.onPress.connect(() => {
-//   const dice = $Dice.get()
-
-//   if (dice.step === 0) {
-//     return
-//   }
-
-//   const current = $Game.get()
-//   if (current.turn === null) {
-//     return
-//   }
-
-//   const temporary = $TemporaryScore.get()
-//   if (temporary.checkedKey === null || temporary.scores === null) {
-//     return
-//   }
-
-//   const currentBoard = $Boards.getAll(current.turn)
-//   $Boards.setRecord(current.turn, temporary.checkedKey, {
-//     round: current.round,
-//     score: temporary.scores[temporary.checkedKey],
-//   })
-
-//   if (
-//     currentBoard &&
-//     isAchieveBonus({
-//       ...currentBoard,
-//       records: {
-//         ...currentBoard.records,
-//         [temporary.checkedKey]: {
-//           round: current.round,
-//           score: temporary.scores[temporary.checkedKey],
-//         },
-//       },
-//     })
-//   ) {
-//     $Boards.setRecord(current.turn, BonusRecordKey, {
-//       round: current.round,
-//       score: BonusScore,
-//     })
-//   }
-
-//   const users = $Users.get()
-//   const currentUserIndex = users.findIndex((user) => user.info.id === current.turn)
-
-//   if (currentUserIndex + 1 === users.length) {
-//     $Game.nextRound(users[0].info.id)
-//     $TemporaryScore.reset()
-//     $Dice.reset()
-//     return
-//   }
-
-//   $Game.setTurn(users[(currentUserIndex + 1) % users.length].info.id)
-//   $TemporaryScore.reset()
-//   $Dice.reset()
-// })
-
-// const endButton = new Button()
-// endButton.onPress.connect(() => {
-//   $Game.regame()
-//   $Boards.erase()
-//   $Dice.reset()
-// })
-
-function main() {
-  const root = document.querySelector('div#app')!
-
-  const userAddButton = document.createElement('button')
-  userAddButton.textContent = 'Add User'
-
-  const boardPanel = document.createElement('div')
-  boardPanel.id = 'boards'
-  boardPanel.style.display = 'flex'
-  boardPanel.style.flexDirection = 'row'
-  boardPanel.style.flexWrap = 'wrap'
-  boardPanel.style.gap = '1rem'
-
-  const dicePanel = document.createElement('div')
-  dicePanel.style.display = 'flex'
-  dicePanel.style.justifyContent = 'flex-start'
-  dicePanel.style.alignItems = 'center'
-
-  const rollDiceButton = document.createElement('button')
-  rollDiceButton.textContent = 'Roll Dice'
-  rollDiceButton.addEventListener('click', () => {
-    $Dice.roll()
-  })
-
-  const actionPanel = document.createElement('div')
-  actionPanel.style.marginTop = '100px'
-
-  const startButton = document.createElement('button')
-  startButton.textContent = 'Start Game'
-  startButton.addEventListener('click', () => {
-    const prev = $Game.get()
-    if (prev.stage !== GameStage.READY) {
+$Game.subscribe(async (game) => {
+  await allTasks()
+  switch (game.stage) {
+    case GameStage.WAITING:
+      actionList.removeChildren()
+      actionList.addChild(userAddButton)
       return
+    case GameStage.READY: {
+      actionList.removeChildren()
+      actionList.addChild(userAddButton)
+      actionList.addChild(startButton)
+      break
     }
-    const users = $Users.get()
-    $Game.startGame(users[0].info.id)
-  })
+    case GameStage.PLAYING: {
+      actionList.removeChild(startButton)
+      actionList.removeChild(userAddButton)
+      actionList.addChild(rollDiceButton)
+      actionList.addChild(turnEndButton)
 
-  const turnEndButton = document.createElement('button')
-  turnEndButton.textContent = 'End Turn'
-  turnEndButton.addEventListener('click', () => {
-    const dice = $Dice.get()
-
-    if (dice.step === 0) {
-      return
-    }
-
-    const current = $Game.get()
-    if (current.turn === null) {
-      return
-    }
-
-    const temporary = $TemporaryScore.get()
-    if (temporary.checkedKey === null || temporary.scores === null) {
-      return
-    }
-
-    const currentBoard = $Boards.getAll(current.turn)
-    $Boards.setRecord(current.turn, temporary.checkedKey, {
-      round: current.round,
-      score: temporary.scores[temporary.checkedKey],
-    })
-
-    if (
-      currentBoard &&
-      isAchieveBonus({
-        ...currentBoard,
-        records: {
-          ...currentBoard.records,
-          [temporary.checkedKey]: {
-            round: current.round,
-            score: temporary.scores[temporary.checkedKey],
-          },
-        },
-      })
-    ) {
-      $Boards.setRecord(current.turn, BonusRecordKey, {
-        round: current.round,
-        score: BonusScore,
-      })
-    }
-
-    const users = $Users.get()
-    const currentUserIndex = users.findIndex((user) => user.info.id === current.turn)
-
-    if (currentUserIndex + 1 === users.length) {
-      $Game.nextRound(users[0].info.id)
-      $TemporaryScore.reset()
-      $Dice.reset()
-      return
-    }
-
-    $Game.setTurn(users[(currentUserIndex + 1) % users.length].info.id)
-    $TemporaryScore.reset()
-    $Dice.reset()
-  })
-
-  const userPanel = document.createElement('div')
-  userPanel.id = 'users'
-
-  root.appendChild(boardPanel)
-  root.appendChild(userPanel)
-  root.appendChild(dicePanel)
-  root.appendChild(actionPanel)
-
-  userAddButton.addEventListener('click', () => {
-    $Users.add()
-  })
-
-  $Game.subscribe((game) => {
-    actionPanel.innerHTML = ''
-
-    if (game.stage === GameStage.PLAYING) {
       if (game.round >= MAX_ROUND) {
         $Game.set({
           ...game,
@@ -282,219 +125,223 @@ function main() {
           }).userRank[0].userID,
         })
       }
-      actionPanel.appendChild(rollDiceButton)
-      actionPanel.appendChild(turnEndButton)
-
-      const element = document.createElement('span')
-      element.textContent = `Round: ${game.round}`
-      actionPanel.appendChild(element)
-    }
-    if (game.stage === GameStage.READY) {
-      actionPanel.appendChild(startButton)
-    }
-    if (game.stage === GameStage.READY || game.stage === GameStage.WAITING) {
-      actionPanel.appendChild(userAddButton)
+      return
     }
 
-    if (game.stage === GameStage.PLAYING) {
-      const elements = [...document.getElementsByClassName('boards')]
-
-      for (const e of elements) {
-        if (e.id === game.turn) {
-          ;(e as HTMLDivElement).style.backgroundColor = 'gray'
-        }
-      }
-    }
-
-    if (game.stage === GameStage.FINISH) {
-      const endButton = document.createElement('button')
-      endButton.addEventListener('click', () => {
-        $Game.regame()
-        $Boards.erase()
-        $Dice.reset()
-      })
-      const user = $Users.get().find((user) => user.info.id === game.winner)
+    case GameStage.FINISH: {
+      const user = $Users.get().find((u) => u.info.id === game.winner)
       const nickname = user?.info.nickname ?? ''
       const score = Object.values($Boards.getAll(user?.info.id ?? '')?.records ?? {}).reduce(
         (prev, curr) => prev + curr.score,
         0,
       )
 
-      endButton.textContent = `The Winner is... ${nickname} (${score} 점)!!! Click To Reset Game`
-
-      actionPanel.appendChild(endButton)
-    }
-  })
-
-  $Dice.subscribe(({ dices, step }) => {
-    const currentGame = $Game.get()
-
-    if (currentGame.stage !== GameStage.PLAYING) {
+      const endButton = new GraphicButton(
+        new FancyText({
+          text: `${nickname} 승리! (${score} 점)`,
+          style: { fontSize: 12, fontWeight: 'bold' },
+        }),
+      )
+      endButton.position.set(50, 0)
+      endButton.onPress.connect(() => {
+        $Game.regame()
+        $Boards.erase()
+        $Dice.reset()
+      })
+      actionList.removeChildren()
+      actionList.addChild(endButton)
       return
     }
+  }
+})
 
-    if (0 < step && step <= MAX_DICE_STEP) {
-      $TemporaryScore.set({
-        ...$TemporaryScore.get(),
-        scores: RecordKeyArray.reduce(
-          (prev, key) => {
-            prev[key] = getScoreOf(key, dices)
-            return prev
-          },
-          {} as Record<RecordKeys, number>,
-        ),
-      })
+$Dice.subscribe(({ dices, step }) => {
+  const currentGame = $Game.get()
+  if (currentGame.stage !== GameStage.PLAYING) return
+  if (currentGame.turn === null) return
+
+  if (0 === step) {
+    for (const child of userList.children) {
+      child.setDice(null)
     }
-    const diceElements = dices.map((dice) => {
-      const elem = document.createElement('div')
-      elem.textContent = String(dice.value)
-      elem.style.width = '50px'
-      elem.style.height = '100px'
-      elem.style.border = dice.fixed ? '1px solid black' : ''
+    diceList.removeChildren()
+  }
+  if (0 < step && step <= MAX_DICE_STEP) {
+    for (const child of userList.children) {
+      if (child.id === currentGame.turn) {
+        child.setDice({ dices, step })
+      } else {
+        child.setDice(null)
+      }
+    }
+  }
+})
 
-      elem.addEventListener('click', () => {
-        $Dice.toggle(dice.id)
-      })
+$TemporaryScore.subscribe(async (temporary) => {
+  await allTasks()
 
-      return elem
+  const game = $Game.get()
+  if (temporary) {
+    for (const child of userList.children) {
+      if (game.turn === child.id) {
+        child.render()
+      }
+    }
+  }
+})
+
+const startButton = new GraphicButton(
+  new FancyText({
+    text: '시작',
+    style: { fontSize: 12, fontWeight: 'bold' },
+  }),
+)
+startButton.onPress.connect(() => {
+  const prev = $Game.get()
+  if (prev.stage !== GameStage.READY) {
+    return
+  }
+  const users = $Users.get()
+  $Game.startGame(users[0].info.id)
+
+  userList.children.forEach((child) => {
+    if (child.id === users[0].info.id) {
+      const { dices, step } = $Dice.get()
+      child.setDice({ dices, step })
+    } else {
+      child.setDice(null)
+    }
+  })
+})
+
+const rollDiceButton = new GraphicButton(
+  new FancyText({
+    text: '주사위 굴리기',
+    style: { fontSize: 12, fontWeight: 'bold' },
+  }),
+)
+rollDiceButton.onDown.connect(() => {
+  const { dices, step } = $Dice.get()
+  if (step >= MAX_DICE_STEP) {
+    return
+  }
+  for (let i = 0; i < animations.dice.length; i++) {
+    const roll = animations.dice[i]
+    if (dices[i].fixed) {
+      continue
+    }
+
+    roll.animationSpeed = 0.1666 * 2
+    roll.play()
+
+    if (diceList.children.length > i) {
+      diceList.removeChildAt(i)
+    }
+    diceList.addChildAt(roll, i)
+  }
+})
+rollDiceButton.onUp.connect(async () => {
+  const { step } = $Dice.get()
+  if (step >= MAX_DICE_STEP) {
+    return
+  }
+  $Dice.roll()
+  await allTasks()
+
+  const current = $Dice.get().dices
+  const dices: FancyButton[] = []
+  for (const dice of current) {
+    const item = new Sprite(
+      sheet.textures[
+        (() => {
+          switch (dice.value) {
+            case 1:
+              return '0000.png'
+            case 2:
+              return '0021.png'
+            case 3:
+              return '0024.png'
+            case 4:
+              return '0001.png'
+            case 5:
+              return '0033.png'
+            case 6:
+              return '0048.png'
+            default:
+              return '0048.png'
+          }
+        })()
+      ],
+    )
+
+    const wrapper = new Graphics().roundRect(6, 6, 48, 48, 8).fill(dice.fixed ? 0x000000 : 0xffffff)
+    wrapper.addChild(item)
+
+    const button = new FancyButton({
+      defaultView: wrapper,
     })
 
-    const stepElem = document.createElement('div')
-    stepElem.textContent = `step: ${step}`
-    stepElem.style.display = 'flex'
-    stepElem.style.width = '120px'
-    stepElem.style.height = '100px'
+    button.onPress.connect(async () => {
+      $Dice.toggle(dice.id)
+      await allTasks()
+      const fixed = $Dice.get().dices.find((d) => d.id === dice.id)?.fixed ?? false
 
-    dicePanel.replaceChildren(...diceElements, stepElem)
+      const wrapper = new Graphics().roundRect(6, 6, 48, 48, 8).fill(fixed ? 0x000000 : 0xffffff)
+      wrapper.addChild(item)
+      button.defaultView = wrapper
+    })
+    dices.push(button)
+  }
+  diceList.removeChildren()
+  diceList.addChild(...dices)
+})
+
+const turnEndButton = new GraphicButton(
+  new FancyText({
+    text: '턴 종료',
+    style: { fontSize: 12, fontWeight: 'bold' },
+  }),
+)
+turnEndButton.onPress.connect(() => {
+  const dice = $Dice.get()
+  if (dice.step === 0) return
+
+  const current = $Game.get()
+  if (current.turn === null) return
+
+  const temporary = $TemporaryScore.get()
+  if (temporary === null) return
+
+  const currentBoard = $Boards.getAll(current.turn)
+  $Boards.setRecord(current.turn, temporary.key, {
+    round: current.round,
+    score: temporary.score,
   })
 
-  $TemporaryScore.subscribe((temp) => {
-    const id = $Game.get().turn
+  if (
+    currentBoard &&
+    [...RecordKeyArray.simple, ...RecordKeyArray.combination].reduce(
+      (prev, curr) => prev + (currentBoard.records[curr]?.score ?? 0),
+      0,
+    ) >= BonusThreshold
+  ) {
+    $Boards.setRecord(current.turn, BonusRecordKey, {
+      round: current.round,
+      score: BonusScore,
+    })
+  }
 
-    if (temp.scores === null) {
-      return
-    }
-    for (const e of document.getElementsByClassName(`${id} value`)) {
-      const key = e.getAttribute('data-key')
-      const already = e.getAttribute('data-already')
+  const users = $Users.get()
+  const currentUserIndex = users.findIndex((user) => user.info.id === current.turn)
 
-      if (already === 'true' || !key) {
-        continue
-      }
+  if (currentUserIndex + 1 === users.length) {
+    $Game.nextRound(users[0].info.id)
+    $Dice.reset()
+    $TemporaryScore.reset()
+    return
+  }
 
-      const element = document.createElement('span')
-      element.style.color = temp.checkedKey === key ? 'red' : 'blue'
-      element.textContent = String(temp.scores[key as RecordKeys])
-      e.addEventListener('click', () => {
-        $TemporaryScore.set({
-          ...$TemporaryScore.get(),
-          checkedKey: key as RecordKeys,
-        })
-      })
-
-      e.replaceChildren(element)
-    }
-  })
-
-  $Users.subscribe((newUsers) => {
-    if (newUsers.length === 0) {
-      $Game.reset()
-    }
-    if (newUsers.length > 0) {
-      $Game.ready()
-    }
-    newUsers.map((user) => $Boards.register(user.info.id))
-  })
-
-  $Boards.subscribe((newBoards) => {
-    const users = $Users.get()
-
-    boardPanel.replaceChildren(
-      ...Object.entries(newBoards)
-        .map(([id, board]) => {
-          const wrapper = document.createElement('div')
-          wrapper.style.display = 'flex'
-          wrapper.style.border = '1px solid black'
-          wrapper.style.flexDirection = 'column'
-          wrapper.style.width = '250px'
-          wrapper.id = id
-          wrapper.className = 'boards'
-
-          const title = document.createElement('h5')
-          title.style.textAlign = 'center'
-
-          const owner = users.find((user) => user.info.id === id)
-
-          if (owner === undefined) {
-            return null
-          }
-
-          title.textContent = owner.info.nickname
-
-          wrapper.appendChild(title)
-          for (const key of RecordKeyArray) {
-            const record = document.createElement('div')
-            record.style.display = 'flex'
-            record.style.flexDirection = 'row'
-            record.style.border = '1px solid black'
-
-            const recordKey = document.createElement('span')
-            recordKey.textContent = key
-            recordKey.style.width = '140px'
-
-            const value = board.records[key]
-
-            const recordValue = document.createElement('span')
-
-            recordValue.textContent = value ? `s: ${value.score}, r: ${value.round}` : ''
-            recordValue.style.flex = '1 0 0'
-            recordValue.className = `${id} value`
-            recordValue.setAttribute('data-key', key)
-            if (value) {
-              recordValue.setAttribute('data-already', 'true')
-            }
-
-            record.appendChild(recordKey)
-            record.appendChild(recordValue)
-
-            wrapper.appendChild(record)
-          }
-
-          {
-            const bonusRow = document.createElement('div')
-            bonusRow.style.display = 'flex'
-            bonusRow.style.flexDirection = 'row'
-            bonusRow.style.border = '1px solid black'
-
-            const recordKey = document.createElement('span')
-            recordKey.textContent = '> 63 Bonus'
-            recordKey.style.width = '140px'
-
-            const value = board.records[BonusRecordKey]
-
-            const recordValue = document.createElement('span')
-
-            recordValue.textContent = value ? `s: ${value.score}, r: ${value.round}` : ''
-            recordValue.style.flex = '1 0 0'
-
-            bonusRow.appendChild(recordKey)
-            bonusRow.appendChild(recordValue)
-
-            wrapper.appendChild(bonusRow)
-          }
-
-          const totalRow = document.createElement('div')
-          totalRow.style.display = 'flex'
-          totalRow.style.flexDirection = 'row'
-          totalRow.style.border = '1px solid black'
-          totalRow.textContent = `Total: ${Object.values(board.records).reduce((prev, curr) => prev + curr.score, 0)}`
-          wrapper.appendChild(totalRow)
-
-          return wrapper
-        })
-        .filter((elem) => elem !== null),
-    )
-  })
-}
-
-// window.addEventListener('load', main)
+  $Game.setTurn(users[(currentUserIndex + 1) % users.length].info.id)
+  $Dice.reset()
+  $TemporaryScore.reset()
+})

@@ -1,16 +1,6 @@
-import { BoardState, RecordKeys } from 'components/board'
+import { RecordKeys } from 'components/board'
 import { DiceState } from 'components/dice'
 
-export function isAchieveBonus(board: BoardState): boolean {
-  if (
-    (['One', 'Two', 'Three', 'Four', 'Five', 'Six'] as RecordKeys[])
-      .map((key) => board.records[key]?.score ?? 0)
-      .reduce((prev, curr) => prev + curr, 0) >= 63
-  ) {
-    return true
-  }
-  return false
-}
 export function getScoreOf(key: RecordKeys, dices: DiceState[]): number {
   const counts = [0, 0, 0, 0, 0, 0]
   for (const d of dices) {
@@ -18,17 +8,17 @@ export function getScoreOf(key: RecordKeys, dices: DiceState[]): number {
   }
 
   switch (key) {
-    case 'One':
+    case 'Aces':
       return counts[0] * 1
-    case 'Two':
+    case 'Deuces':
       return counts[1] * 2
-    case 'Three':
+    case 'Threes':
       return counts[2] * 3
-    case 'Four':
+    case 'Fours':
       return counts[3] * 4
-    case 'Five':
+    case 'Fives':
       return counts[4] * 5
-    case 'Six':
+    case 'Sixes':
       return counts[5] * 6
     case 'Choice':
       return dices.reduce((prev, dice) => prev + dice.value, 0)
