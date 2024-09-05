@@ -1,6 +1,6 @@
 import { atom } from 'nanostores'
 
-import { UserState } from 'components/user'
+import { UserState } from 'stores/user'
 
 export enum GameStage {
   WAITING = 0,

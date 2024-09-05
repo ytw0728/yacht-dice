@@ -1,5 +1,5 @@
-import { RecordKeys } from 'components/board'
-import { DiceState } from 'components/dice'
+import { RecordKeys } from 'stores/board'
+import { DiceState } from 'stores/dice'
 
 export function getScoreOf(key: RecordKeys, dices: DiceState[]): number {
   const counts = [0, 0, 0, 0, 0, 0]

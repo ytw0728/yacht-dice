@@ -1,5 +1,5 @@
-import { BoardState } from 'components/board'
-import { UserState } from 'components/user'
+import { BoardState } from 'stores/board'
+import { UserState } from 'stores/user'
 
 export const PLAYER_COUNT = { min: 1, max: 6 } as const
 export const MAX_ROUND = 12

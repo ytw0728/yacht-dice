@@ -1,29 +1,31 @@
 import { FancyButton } from '@pixi/ui'
 import Table from 'pixi-table-layout'
-import { Container, Graphics } from 'pixi.js'
+import { Assets, Container, Graphics } from 'pixi.js'
 
-import { BoardState, BonusThreshold, RecordKeyArray, RecordKeys } from 'components/board'
-import { DiceState } from 'components/dice'
-import { $TemporaryScore } from 'components/temporary-score'
-import { UserState } from 'components/user'
+import { BoardState, BonusThreshold, RecordKeyArray, RecordKeys } from 'stores/board'
+import { DiceState } from 'stores/dice'
+import { $TemporaryScore } from 'stores/temporary-score'
+import { UserState } from 'stores/user'
 import { FancyText } from 'ui/FancyText'
 import { getScoreOf } from 'utils/caculator'
 
+const background = await Assets.load('table.png')
 export class ScoreBoard extends Container {
   public render(): void {
-    const wrapper = new Graphics().roundRect(0, 0, 120, 315, 4).fill(0xffffff).stroke({ color: 0x000000, width: 2 })
+    console.log(background)
+    const wrapper = new Graphics()
+      .roundRect(0, 0, 200, 720, 8)
+      .fill(0xffffff)
+      .texture(background, undefined, undefined, undefined, 200, 720)
 
     const table = new Table()
     table
-      .row(20)
+      .row(50)
       .cell()
       .element(
         new FancyText({
           text: this.user.info.nickname,
-          style: {
-            fontSize: 8,
-            fontWeight: 'bold',
-          },
+          style: { fontSize: 16, fontWeight: 'bold', ...(this.isTurn ? { fill: 0x0699fb } : {}) },
         }),
         'shrink',
       )
@@ -52,55 +54,65 @@ export class ScoreBoard extends Container {
     const drawRecord = (key: RecordKeys): void => {
       const value = this.board.records[key]?.score.toString()
       const element = value
-        ? new FancyText({ text: value, style: { fontWeight: 'bold' } })
+        ? new FancyText({ text: value, style: { fontSize: 16, fontWeight: 'bold' } })
         : tempScores[key] !== undefined
           ? (() => {
               const text = new FancyText({
                 text: tempScores[key],
-                style: { fill: selected === key ? 0x333333 : 0xcccccc },
+                style: { fontSize: 16, fill: selected === key ? 0x333333 : 0xcccccc },
               })
               const button = new FancyButton({ textOffset: { x: text.width / 2, y: text.height / 2 } })
 
               button.addChild(text)
-              button.on('click', () => {
+              button.removeAllListeners()
+              const onClick = () => {
+                console.log(
+                  key,
+                  tempScores[key],
+                  dices.map((dice) => dice.value),
+                )
                 $TemporaryScore.set({
                   key,
                   score: tempScores[key] ?? 0,
                 })
-              })
+              }
+
+              button.on('click', onClick)
+              button.on('touchstart', onClick)
               return button
             })()
           : new FancyText({ text: value })
       table
-        .row(20)
+        .row(48)
         .cell()
-        .element(new FancyText({ text: key, style: { fontWeight: 'bold' } }), 'shrink')
+        .element(new FancyText({ text: key, style: { fontSize: 16, fontWeight: 'bold' } }), 'shrink')
         .cell()
         .element(element)
     }
 
     RecordKeyArray.simple.forEach(drawRecord)
     table
-      .row(30)
+      .row(42)
       .cell()
       .element(
         new FancyText({
           text: `+35 Bonus \n(${subtotal} / ${BonusThreshold})`,
-          style: { fontWeight: 'bold', fill: subtotal >= BonusThreshold ? 0x0699fb : 0x888888 },
+          style: { fontSize: 16, fontWeight: 'bold', fill: subtotal >= BonusThreshold ? 0x0699fb : 0x888888 },
         }),
         'shrink',
       )
 
     RecordKeyArray.combination.forEach(drawRecord)
     table
-      .row(20)
+      .row(40)
       .cell()
-      .element(new FancyText({ text: `총 점수 : ${total}`, style: { fontSize: 8, fontWeight: 'bold' } }), 'shrink')
+      .element(new FancyText({ text: `총 점수 : ${total}`, style: { fontSize: 16, fontWeight: 'bold' } }), 'shrink')
 
     // NOTE: resize에 update 로직이 포함되어 있어, 데이터구조 지정 후 setSize를 호출해야 함
-    table.setSize(120, 200)
+    table.setSize(200, 600)
     // table.debug = process.env.NODE_ENV === 'development'
     wrapper.addChild(table)
+    this.removeChildren()
     this.addChild(wrapper)
   }
 
@@ -110,8 +122,17 @@ export class ScoreBoard extends Container {
   }
 
   public setDice(diceInfo: { dices: DiceState[]; step: number } | null): void {
-    this.diceInfo = diceInfo
+    this.diceInfo = diceInfo ? { dices: [...diceInfo.dices], step: diceInfo.step } : null
     this.render()
+  }
+
+  public setTurn(turn: UserState['info']['id']): void {
+    this.turn = turn
+    this.render()
+  }
+
+  public get isTurn(): boolean {
+    return this.turn === this.id
   }
 
   public get id(): string {
@@ -127,11 +148,13 @@ export class ScoreBoard extends Container {
     this.user = user
     this.board = board
     this.diceInfo = null
+    this.turn = ''
 
     this.render()
   }
 
   private readonly user: UserState
+  private turn: UserState['info']['id']
   private board: BoardState
   private diceInfo: { dices: DiceState[]; step: number } | null
 }

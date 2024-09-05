@@ -5,7 +5,7 @@ export class FancyText extends Text {
     super({
       ...options,
       style: {
-        fontSize: 8,
+        fontSize: 32,
         fill: 0x333333,
         align: 'center',
         ...options.style,

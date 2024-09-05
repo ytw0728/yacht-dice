@@ -1,6 +1,6 @@
 import { map } from 'nanostores'
 
-import { UserState } from 'components/user'
+import { UserState } from 'stores/user'
 
 export type SimpleRecordKeys = 'Aces' | 'Deuces' | 'Threes' | 'Fours' | 'Fives' | 'Sixes'
 export type CombinationRecordKeys = 'Choice' | '4 of a Kind' | 'Full House' | 'S. Straight' | 'L. Straight' | 'Yacht'
