@@ -32,10 +32,7 @@ const onClick = () => {
 
   if (
     currentBoard &&
-    [...RecordKeyArray.simple, ...RecordKeyArray.combination].reduce(
-      (prev, curr) => prev + (currentBoard.records[curr]?.score ?? 0),
-      0,
-    ) >= BonusThreshold
+    RecordKeyArray.simple.reduce((prev, curr) => prev + (currentBoard.records[curr]?.score ?? 0), 0) >= BonusThreshold
   ) {
     $Boards.setRecord(current.turn, BonusRecordKey, {
       round: current.round,

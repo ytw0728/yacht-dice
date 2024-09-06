@@ -75,11 +75,11 @@ const onUp = async () => {
     )
 
     const wrapper = new Graphics().roundRect(6, 6, 48, 48, 8).fill(dice.fixed ? 0x000000 : 0xffffff)
-    wrapper.addChild(item)
 
     const button = new FancyButton({
       defaultView: wrapper,
     })
+    button.addChild(item)
 
     const onClick = async () => {
       $Dice.toggle(dice.id)
@@ -87,8 +87,8 @@ const onUp = async () => {
       const fixed = $Dice.get().dices.find((d) => d.id === dice.id)?.fixed ?? false
 
       const newWrapper = new Graphics().roundRect(6, 6, 48, 48, 8).fill(fixed ? 0x000000 : 0xffffff)
-      newWrapper.addChild(item)
       button.defaultView = newWrapper
+      button.addChild(item)
     }
     button.onPress.connect(onClick)
     button.on('touchstart', onClick)

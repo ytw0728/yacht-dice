@@ -17,7 +17,6 @@ import { ScoreBoard } from 'ui/ScoreBoard'
 import { MAX_ROUND, PLAYER_COUNT, validate } from 'utils/validater'
 
 const app = new Application()
-
 await app.init({
   resolution: Math.max(window.devicePixelRatio, 2),
   backgroundColor: 0xffffff,
@@ -50,7 +49,6 @@ DiceList.on('childAdded', () => {
 DiceList.on('childRemoved', () => {
   DiceList.position.set((app.screen.width - DiceList.width) / 2, 800)
 })
-app.stage.addChild(DiceList)
 
 export const UserList = new List<ScoreBoard>({
   children: [],
@@ -64,7 +62,6 @@ UserList.on('childAdded', () => {
 UserList.on('childRemoved', () => {
   UserList.position.set((app.screen.width - UserList.width) / 2, 30)
 })
-app.stage.addChild(UserList)
 
 export const ActionList = new List<GraphicButton>({
   children: [],
@@ -78,7 +75,6 @@ ActionList.on('childAdded', () => {
 ActionList.on('childRemoved', () => {
   ActionList.position.set((app.screen.width - ActionList.width) / 2, app.screen.height - ActionList.height - 60)
 })
-app.stage.addChild(ActionList)
 
 $Users.subscribe((users) => {
   if (users.length === 0) {
@@ -214,3 +210,7 @@ $TemporaryScore.subscribe(async (temporary) => {
     }
   }
 })
+
+app.stage.addChild(DiceList)
+app.stage.addChild(UserList)
+app.stage.addChild(ActionList)

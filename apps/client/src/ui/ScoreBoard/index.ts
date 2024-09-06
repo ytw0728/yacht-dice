@@ -111,9 +111,10 @@ export class ScoreBoard extends Container {
     // NOTE: resize에 update 로직이 포함되어 있어, 데이터구조 지정 후 setSize를 호출해야 함
     table.setSize(200, 600)
     // table.debug = process.env.NODE_ENV === 'development'
-    wrapper.addChild(table)
+
     this.removeChildren()
     this.addChild(wrapper)
+    this.addChild(table)
   }
 
   public setBoard(board: BoardState): void {
