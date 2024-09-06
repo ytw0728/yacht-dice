@@ -12,20 +12,19 @@ import { getScoreOf } from 'utils/caculator'
 const background = await Assets.load('table.png')
 export class ScoreBoard extends Container {
   public render(): void {
-    console.log(background)
     const wrapper = new Graphics()
-      .roundRect(0, 0, 200, 720, 8)
+      .roundRect(0, 0, 160, 400, 8)
       .fill(0xffffff)
-      .texture(background, undefined, undefined, undefined, 200, 720)
+      .texture(background, undefined, undefined, undefined, 160, 400)
 
     const table = new Table()
     table
-      .row(50)
+      .row(30)
       .cell()
       .element(
         new FancyText({
           text: this.user.info.nickname,
-          style: { fontSize: 16, fontWeight: 'bold', ...(this.isTurn ? { fill: 0x0699fb } : {}) },
+          style: { fontSize: 14, fontWeight: 'bold', ...(this.isTurn ? { fill: 0x0699fb } : {}) },
         }),
         'shrink',
       )
@@ -59,7 +58,7 @@ export class ScoreBoard extends Container {
           ? (() => {
               const text = new FancyText({
                 text: tempScores[key],
-                style: { fontSize: 16, fill: selected === key ? 0x333333 : 0xcccccc },
+                style: { fontSize: 10, fill: selected === key ? 0x333333 : 0xcccccc },
               })
               const button = new FancyButton({ textOffset: { x: text.width / 2, y: text.height / 2 } })
 
@@ -77,40 +76,40 @@ export class ScoreBoard extends Container {
                 })
               }
 
-              button.on('click', onClick)
+              button.onPress.connect(onClick)
               button.on('touchstart', onClick)
               return button
             })()
           : new FancyText({ text: value })
       table
-        .row(48)
+        .row(26)
         .cell()
-        .element(new FancyText({ text: key, style: { fontSize: 16, fontWeight: 'bold' } }), 'shrink')
+        .element(new FancyText({ text: key, style: { fontSize: 10, fontWeight: 'bold' } }), 'shrink')
         .cell()
         .element(element)
     }
 
     RecordKeyArray.simple.forEach(drawRecord)
     table
-      .row(42)
+      .row(30)
       .cell()
       .element(
         new FancyText({
           text: `+35 Bonus \n(${subtotal} / ${BonusThreshold})`,
-          style: { fontSize: 16, fontWeight: 'bold', fill: subtotal >= BonusThreshold ? 0x0699fb : 0x888888 },
+          style: { fontSize: 10, fontWeight: 'bold', fill: subtotal >= BonusThreshold ? 0x0699fb : 0x888888 },
         }),
         'shrink',
       )
 
     RecordKeyArray.combination.forEach(drawRecord)
     table
-      .row(40)
+      .row(30)
       .cell()
       .element(new FancyText({ text: `총 점수 : ${total}`, style: { fontSize: 16, fontWeight: 'bold' } }), 'shrink')
 
     // NOTE: resize에 update 로직이 포함되어 있어, 데이터구조 지정 후 setSize를 호출해야 함
-    table.setSize(200, 600)
-    // table.debug = process.env.NODE_ENV === 'development'
+    table.setSize(160, 400)
+    table.debug = process.env.NODE_ENV === 'development'
 
     this.removeChildren()
     this.addChild(wrapper)

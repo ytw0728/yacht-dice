@@ -6,7 +6,7 @@ import { GraphicButton } from 'ui/GraphicButton'
 export const StartButton = new GraphicButton(
   new FancyText({
     text: '시작',
-    style: { fontSize: 32, fontWeight: 'bold' },
+    style: { fontSize: 16, fontWeight: 'bold' },
   }),
 )
 
@@ -20,4 +20,3 @@ const onClick = () => {
 }
 
 StartButton.onPress.connect(onClick)
-StartButton.on('touchstart', onClick)

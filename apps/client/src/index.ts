@@ -61,10 +61,10 @@ void app
   })
   .then(() => {
     DiceList.on('childAdded', () => {
-      DiceList.position.set((app.screen.width - DiceList.width) / 2, 800)
+      DiceList.position.set((app.screen.width - DiceList.width) / 2, UserList.height + 60)
     })
     DiceList.on('childRemoved', () => {
-      DiceList.position.set((app.screen.width - DiceList.width) / 2, 800)
+      DiceList.position.set((app.screen.width - DiceList.width) / 2, UserList.height + 60)
     })
 
     UserList.on('childAdded', () => {
@@ -161,7 +161,7 @@ void app
           const endButton = new GraphicButton(
             new FancyText({
               text: `${nickname} 승리! (${score} 점)`,
-              style: { fontSize: 32, fontWeight: 'bold' },
+              style: { fontSize: 16, fontWeight: 'bold' },
             }),
           )
           endButton.position.set(50, 0)
@@ -171,7 +171,6 @@ void app
             $Dice.reset()
           }
           endButton.onPress.connect(onClick)
-          endButton.on('touchstart', onClick)
 
           ActionList.removeChildren()
           ActionList.addChild(endButton)

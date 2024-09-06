@@ -11,7 +11,7 @@ import { GraphicButton } from 'ui/GraphicButton'
 export const RollDiceButton = new GraphicButton(
   new FancyText({
     text: '주사위 굴리기',
-    style: { fontSize: 32, fontWeight: 'bold' },
+    style: { fontSize: 16, fontWeight: 'bold' },
   }),
 )
 const onDown = () => {
@@ -38,7 +38,6 @@ const onDown = () => {
   $TemporaryScore.reset()
 }
 RollDiceButton.onDown.connect(onDown)
-RollDiceButton.on('touchstart', onDown)
 
 const onUp = async () => {
   const { step } = $Dice.get()
@@ -91,7 +90,6 @@ const onUp = async () => {
       button.addChild(item)
     }
     button.onPress.connect(onClick)
-    button.on('touchstart', onClick)
     dices.push(button)
   }
   DiceList.removeChildren()

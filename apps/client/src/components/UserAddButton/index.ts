@@ -5,9 +5,8 @@ import { GraphicButton } from 'ui/GraphicButton'
 export const UserAddButton = new GraphicButton(
   new FancyText({
     text: '플레이어 추가',
-    style: { fontSize: 32, fontWeight: 'bold' },
+    style: { fontSize: 16, fontWeight: 'bold' },
   }),
 )
 const onClick = () => $Users.add()
 UserAddButton.onPress.connect(onClick)
-UserAddButton.on('touchstart', onClick)

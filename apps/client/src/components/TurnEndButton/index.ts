@@ -9,7 +9,7 @@ import { GraphicButton } from 'ui/GraphicButton'
 export const TurnEndButton = new GraphicButton(
   new FancyText({
     text: '턴 종료',
-    style: { fontSize: 32, fontWeight: 'bold' },
+    style: { fontSize: 16, fontWeight: 'bold' },
   }),
 )
 const onClick = () => {
@@ -56,4 +56,3 @@ const onClick = () => {
 }
 
 TurnEndButton.onPress.connect(onClick)
-TurnEndButton.on('touchstart', onClick)
