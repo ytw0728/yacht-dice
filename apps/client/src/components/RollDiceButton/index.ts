@@ -97,4 +97,3 @@ const onUp = async () => {
 }
 
 RollDiceButton.onUp.connect(onUp)
-RollDiceButton.on('touchend', onUp)
